@@ -91,14 +91,14 @@ python -m src.etl.extract_transform --start-date 2026-01-01 --end-date 2026-03-3
 Linux/macOS:
 
 ```bash
-export DATABASE_URL="postgresql+psycopg2://postgres:SUA_SENHA@localhost:5432/torres_motos_db"
+export DATABASE_URL="postgresql+psycopg2://postgres:SUA_SENHA@localhost:5432/torres_motors_db"
 python -m src.etl.load_to_db
 ```
 
 PowerShell:
 
 ```powershell
-$env:DATABASE_URL="postgresql+psycopg2://postgres:SUA_SENHA@localhost:5432/torres_motos_db"
+$env:DATABASE_URL="postgresql+psycopg2://postgres:SUA_SENHA@localhost:5432/torres_motors_db"
 python -m src.etl.load_to_db
 ```
 
@@ -107,7 +107,7 @@ A carga é um *full refresh* transacional: uma nova execução substitui o snaps
 ### 5. Validar e testar
 
 ```bash
-psql -h localhost -U postgres -d torres_motos_db -f database/queries_validation.sql
+psql -h localhost -U postgres -d torres_motors_db -f database/queries_validation.sql
 pytest
 ```
 
