@@ -1,0 +1,38 @@
+
+TORRES MOTORS — POWER BI PROFISSIONAL
+
+ARQUIVO PRINCIPAL
+Abra Torres_Motors_Analytics.pbip no Power BI Desktop.
+
+IMPORTANTE
+O arquivo .pbip depende das duas pastas que estão ao lado dele:
+- Torres_Motors_Analytics.Report
+- Torres_Motors_Analytics.SemanticModel
+
+Não mova nem abra apenas o arquivo .pbip isoladamente.
+
+COMO ABRIR
+1. Clone ou baixe o repositório completo.
+2. Abra powerbi/Torres_Motors_Analytics.pbip.
+3. Se aparecer uma solicitação de privacidade, escolha "Organizacional" ou "Público" para os dois CSVs.
+4. Clique em Atualizar.
+5. Para gerar um arquivo único, use Arquivo > Salvar como e escolha PBIX.
+
+FONTE DE DADOS
+O parâmetro DataRoot contém a pasta absoluta dos CSVs. Se o projeto estiver em outro local, altere-o em:
+Página Inicial > Transformar dados > Gerenciar parâmetros > DataRoot
+
+Por segurança e portabilidade, o valor inicial é C:\TorresMotors\data\raw.
+O valor deve terminar em data\raw e a pasta precisa conter:
+- raw_marketing_ads.csv
+- raw_crm_sales.csv
+
+CORREÇÕES INCLUÍDAS
+- custo de mídia importado como moeda com cultura en-US, evitando 1010.99 virar 101099;
+- calendário ligado às duas tabelas de fatos;
+- mês ordenado pelo número do mês;
+- filtros sincronizados entre as páginas;
+- seleções antigas removidas;
+- medidas DAX formatadas para moeda, percentual e ROAS;
+- tema, logo, cartões, gráficos, matriz e navegação reprojetados;
+- arquivos temporários locais do Power BI excluídos do Git.

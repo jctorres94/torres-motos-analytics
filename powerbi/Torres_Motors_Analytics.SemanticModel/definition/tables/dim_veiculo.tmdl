@@ -1,0 +1,19 @@
+
+table dim_veiculo
+
+	column vehicle_model
+		dataType: string
+		sourceColumn: vehicle_model
+		summarizeBy: none
+
+	partition dim_veiculo = m
+		mode: import
+		source =
+				let
+					Midia = Table.SelectColumns(fato_desempenho_midia, {"vehicle_model"}),
+					CRM = Table.SelectColumns(fato_funil_crm, {"vehicle_model"}),
+					Uniao = Table.Combine({Midia, CRM}),
+					Distintos = Table.Distinct(Uniao),
+					Ordenados = Table.Sort(Distintos, {{"vehicle_model", Order.Ascending}})
+				in
+					Ordenados

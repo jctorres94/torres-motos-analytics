@@ -1,0 +1,16 @@
+
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-US
+
+ref table fato_desempenho_midia
+ref table fato_funil_crm
+ref table dim_plataforma
+ref table dim_veiculo
+ref table dim_tempo
+ref table _Medidas
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+annotation PBI_QueryOrder = ["fato_desempenho_midia","fato_funil_crm","dim_plataforma","dim_veiculo","dim_tempo","_Medidas"]

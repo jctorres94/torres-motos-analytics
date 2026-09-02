@@ -1,0 +1,19 @@
+
+table dim_plataforma
+
+	column platform
+		dataType: string
+		sourceColumn: platform
+		summarizeBy: none
+
+	partition dim_plataforma = m
+		mode: import
+		source =
+				let
+					Midia = Table.SelectColumns(fato_desempenho_midia, {"platform"}),
+					CRM = Table.SelectColumns(fato_funil_crm, {"platform"}),
+					Uniao = Table.Combine({Midia, CRM}),
+					Distintos = Table.Distinct(Uniao),
+					Ordenados = Table.Sort(Distintos, {{"platform", Order.Ascending}})
+				in
+					Ordenados

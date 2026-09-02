@@ -1,0 +1,67 @@
+
+table fato_funil_crm
+
+	column lead_id
+		dataType: string
+		sourceColumn: lead_id
+		summarizeBy: none
+
+	column date
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		sourceColumn: date
+		summarizeBy: none
+
+	column platform
+		dataType: string
+		isHidden
+		sourceColumn: platform
+		summarizeBy: none
+
+	column vehicle_model
+		dataType: string
+		isHidden
+		sourceColumn: vehicle_model
+		summarizeBy: none
+
+	column test_drive
+		dataType: boolean
+		sourceColumn: test_drive
+		summarizeBy: none
+
+	column sale_completed
+		dataType: boolean
+		sourceColumn: sale_completed
+		summarizeBy: none
+
+	column sale_value
+		dataType: decimal
+		formatString: R$ #,##0.00
+		sourceColumn: sale_value
+		summarizeBy: sum
+
+	partition fato_funil_crm = m
+		mode: import
+		source =
+				let
+					Fonte = Csv.Document(
+						File.Contents(DataRoot & "\raw_crm_sales.csv"),
+						[Delimiter=",", Columns=7, Encoding=65001, QuoteStyle=QuoteStyle.Csv]
+					),
+					Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+					Tipos = Table.TransformColumnTypes(
+						Cabecalhos,
+						{
+							{"lead_id", type text},
+							{"date", type date},
+							{"platform", type text},
+							{"vehicle_model", type text},
+							{"test_drive", type logical},
+							{"sale_completed", type logical},
+							{"sale_value", Currency.Type}
+						},
+						"en-US"
+					),
+					LinhasValidas = Table.SelectRows(Tipos, each [lead_id] <> null and [date] <> null)
+				in
+					LinhasValidas

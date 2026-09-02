@@ -1,0 +1,24 @@
+
+relationship 0144b812-578d-4ef0-aed1-8bc1f867a268
+	fromColumn: fato_desempenho_midia.date
+	toColumn: dim_tempo.Date
+
+relationship 5aa65774-2f2b-4c8e-a1f3-fca366531d4f
+	fromColumn: fato_funil_crm.date
+	toColumn: dim_tempo.Date
+
+relationship 89b51d6b-28c5-4797-bb63-c9d1776d70ca
+	fromColumn: fato_desempenho_midia.platform
+	toColumn: dim_plataforma.platform
+
+relationship 115b66d3-f8fc-4349-b5c4-12059181a80c
+	fromColumn: fato_funil_crm.platform
+	toColumn: dim_plataforma.platform
+
+relationship 14a15344-e999-486a-a583-c04ee0fbf016
+	fromColumn: fato_desempenho_midia.vehicle_model
+	toColumn: dim_veiculo.vehicle_model
+
+relationship 42b935a1-3057-490f-ab86-f88c8d7578a2
+	fromColumn: fato_funil_crm.vehicle_model
+	toColumn: dim_veiculo.vehicle_model

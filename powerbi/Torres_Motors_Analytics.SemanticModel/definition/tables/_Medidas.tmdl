@@ -1,0 +1,73 @@
+
+table _Medidas
+
+	measure 'Total Investido' = COALESCE(SUM(fato_desempenho_midia[cost_brl]), 0)
+		formatString: R$ #,##0.00
+		displayFolder: Mídia
+
+	measure 'Total Impressões' = COALESCE(SUM(fato_desempenho_midia[impressions]), 0)
+		formatString: #,##0
+		displayFolder: Mídia
+
+	measure 'Total Cliques' = COALESCE(SUM(fato_desempenho_midia[clicks]), 0)
+		formatString: #,##0
+		displayFolder: Mídia
+
+	measure 'Total Leads' = COALESCE(SUM(fato_desempenho_midia[leads]), 0)
+		formatString: #,##0
+		displayFolder: Funil
+
+	measure 'Total Test Drives' = CALCULATE(COUNTROWS(fato_funil_crm), fato_funil_crm[test_drive] = TRUE())
+		formatString: #,##0
+		displayFolder: Funil
+
+	measure 'Total Vendas' = CALCULATE(COUNTROWS(fato_funil_crm), fato_funil_crm[sale_completed] = TRUE())
+		formatString: #,##0
+		displayFolder: Funil
+
+	measure 'Receita Total' = COALESCE(SUM(fato_funil_crm[sale_value]), 0)
+		formatString: R$ #,##0.00
+		displayFolder: Receita
+
+	measure ROAS = DIVIDE([Receita Total], [Total Investido], 0)
+		formatString: 0.00x
+		displayFolder: Eficiência
+
+	measure CAC = DIVIDE([Total Investido], [Total Vendas], 0)
+		formatString: R$ #,##0.00
+		displayFolder: Eficiência
+
+	measure CTR = DIVIDE([Total Cliques], [Total Impressões], 0)
+		formatString: 0.00%
+		displayFolder: Eficiência
+
+	measure CPC = DIVIDE([Total Investido], [Total Cliques], 0)
+		formatString: R$ #,##0.00
+		displayFolder: Eficiência
+
+	measure CPL = DIVIDE([Total Investido], [Total Leads], 0)
+		formatString: R$ #,##0.00
+		displayFolder: Eficiência
+
+	measure 'Taxa de Test Drive' = DIVIDE([Total Test Drives], [Total Leads], 0)
+		formatString: 0.00%
+		displayFolder: Conversão
+
+	measure 'Conversão em Vendas' = DIVIDE([Total Vendas], [Total Leads], 0)
+		formatString: 0.00%
+		displayFolder: Conversão
+
+	measure 'Ticket Médio' = DIVIDE([Receita Total], [Total Vendas], 0)
+		formatString: R$ #,##0.00
+		displayFolder: Receita
+
+	column Chave
+		dataType: int64
+		isHidden
+		sourceColumn: Chave
+		summarizeBy: none
+
+	partition _Medidas = m
+		mode: import
+		source =
+				#table(type table [Chave = Int64.Type], {{1}})

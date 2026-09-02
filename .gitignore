@@ -14,3 +14,8 @@ htmlcov/
 Thumbs.db
 *.log
 ~$*.pbix
+
+# Power BI Project — arquivos locais e cache
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+**/.pbi/*.abf

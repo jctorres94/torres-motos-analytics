@@ -1,0 +1,70 @@
+
+table fato_desempenho_midia
+
+	column date
+		dataType: dateTime
+		formatString: dd/MM/yyyy
+		sourceColumn: date
+		summarizeBy: none
+
+	column platform
+		dataType: string
+		isHidden
+		sourceColumn: platform
+		summarizeBy: none
+
+	column vehicle_model
+		dataType: string
+		isHidden
+		sourceColumn: vehicle_model
+		summarizeBy: none
+
+	column impressions
+		dataType: int64
+		formatString: #,##0
+		sourceColumn: impressions
+		summarizeBy: sum
+
+	column clicks
+		dataType: int64
+		formatString: #,##0
+		sourceColumn: clicks
+		summarizeBy: sum
+
+	column cost_brl
+		dataType: decimal
+		formatString: R$ #,##0.00
+		sourceColumn: cost_brl
+		summarizeBy: sum
+
+	column leads
+		dataType: int64
+		formatString: #,##0
+		sourceColumn: leads
+		summarizeBy: sum
+
+	partition fato_desempenho_midia = m
+		mode: import
+		source =
+				let
+					Fonte = Csv.Document(
+						File.Contents(DataRoot & "\raw_marketing_ads.csv"),
+						[Delimiter=",", Columns=7, Encoding=65001, QuoteStyle=QuoteStyle.Csv]
+					),
+					Cabecalhos = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+					Tipos = Table.TransformColumnTypes(
+						Cabecalhos,
+						{
+							{"date", type date},
+							{"platform", type text},
+							{"vehicle_model", type text},
+							{"impressions", Int64.Type},
+							{"clicks", Int64.Type},
+							{"cost_brl", Currency.Type},
+							{"leads", Int64.Type}
+						},
+						"en-US"
+					),
+					LinhasValidas = Table.SelectRows(Tipos, each [date] <> null and [platform] <> null and [vehicle_model] <> null)
+				in
+					LinhasValidas

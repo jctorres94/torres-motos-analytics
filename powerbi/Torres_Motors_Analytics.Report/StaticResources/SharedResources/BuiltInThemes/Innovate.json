@@ -1,0 +1,145 @@
+{
+  "name": "Innovate",
+  "dataColors": [
+    "#00B8D9",
+    "#F4B942",
+    "#3A86FF",
+    "#2EC4B6",
+    "#845EC2",
+    "#EF476F"
+  ],
+  "foreground": "#172033",
+  "foregroundNeutralSecondary": "#5C677D",
+  "foregroundNeutralTertiary": "#8E9AAF",
+  "background": "#FFFFFF",
+  "backgroundLight": "#F4F7FB",
+  "backgroundNeutral": "#E8EEF5",
+  "tableAccent": "#00B8D9",
+  "maximum": "#00B8D9",
+  "center": "#F4B942",
+  "minimum": "#D8F6FB",
+  "hyperlink": "#007FA3",
+  "visitedHyperlink": "#845EC2",
+  "textClasses": {
+    "callout": {
+      "fontFace": "Segoe UI Semibold",
+      "color": "#0B132B"
+    },
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "color": "#0B132B"
+    },
+    "header": {
+      "fontFace": "Segoe UI Semibold",
+      "color": "#172033"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "color": "#5C677D"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "title": [
+          {
+            "show": true,
+            "fontColor": {
+              "solid": {
+                "color": "#0B132B"
+              }
+            },
+            "fontFamily": "Segoe UI Semibold",
+            "fontSize": 13,
+            "alignment": "left"
+          }
+        ],
+        "visualHeader": [
+          {
+            "show": true,
+            "foreground": {
+              "solid": {
+                "color": "#5C677D"
+              }
+            },
+            "background": {
+              "solid": {
+                "color": "#FFFFFF"
+              }
+            },
+            "border": {
+              "solid": {
+                "color": "#DDE5EF"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F4F7FB"
+              }
+            },
+            "transparency": 0
+          }
+        ],
+        "outspace": [
+          {
+            "color": {
+              "solid": {
+                "color": "#E8EEF5"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "cardVisual": {
+      "*": {
+        "labels": [
+          {
+            "fontColor": {
+              "solid": {
+                "color": "#0B132B"
+              }
+            },
+            "fontSize": 30
+          }
+        ],
+        "categoryLabels": [
+          {
+            "fontColor": {
+              "solid": {
+                "color": "#5C677D"
+              }
+            },
+            "fontSize": 11
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "items": [
+          {
+            "fontColor": {
+              "solid": {
+                "color": "#172033"
+              }
+            },
+            "background": {
+              "solid": {
+                "color": "#FFFFFF"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
