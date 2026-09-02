@@ -1,68 +1,158 @@
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine, text
 
-# String de Conexão do PostgreSQL (Ajuste usuário, senha e porta conforme seu banco)
-DB_URL = "postgresql://postgres:postgres@localhost:5432/torres_motors_db"
+from src.etl.extract_transform import DEFAULT_OUTPUT_DIR, validate_generated_data
 
-def run_database_pipeline():
+
+def get_database_url() -> str:
     try:
-        engine = create_engine(DB_URL)
-        print("✓ Conexão estabelecida com o PostgreSQL.")
-        
-        # 1. Leitura dos CSVs brutos
-        df_ads = pd.read_csv("data/raw/raw_marketing_ads.csv")
-        df_crm = pd.read_csv("data/raw/raw_crm_sales.csv")
-        
-        # 2. Carga Dimensão Plataforma
-        platforms = pd.DataFrame({"nome_plataforma": df_ads["platform"].unique()})
-        platforms.to_sql("dim_plataforma", engine, if_exists="append", index=False)
-        print("✓ Tabela 'dim_plataforma' populada.")
+        return os.environ["DATABASE_URL"]
+    except KeyError as exc:
+        raise RuntimeError(
+            "DATABASE_URL is required. Copy .env.example and export the variable."
+        ) from exc
 
-        # 3. Carga Dimensão Veículo
-        models = pd.DataFrame({"modelo_veiculo": df_ads["vehicle_model"].unique()})
-        models.to_sql("dim_veiculo", engine, if_exists="append", index=False)
-        print("✓ Tabela 'dim_veiculo' populada.")
 
-        # 4. Carga Dimensão Tempo
-        df_ads['date'] = pd.to_datetime(df_ads['date'])
-        dates = pd.date_range(start=df_ads['date'].min(), end=df_ads['date'].max())
-        dim_tempo = pd.DataFrame({
+def read_raw_data(raw_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    ads = pd.read_csv(raw_dir / "raw_marketing_ads.csv")
+    crm = pd.read_csv(raw_dir / "raw_crm_sales.csv")
+    ads["date"] = pd.to_datetime(ads["date"])
+    crm["date"] = pd.to_datetime(crm["date"])
+    validate_generated_data(ads, crm)
+    return ads, crm
+
+
+def build_dimensions(
+    ads: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    platforms = pd.DataFrame(
+        {"nome_plataforma": sorted(ads["platform"].dropna().unique())}
+    )
+    vehicles = pd.DataFrame(
+        {
+            "modelo_veiculo": sorted(ads["vehicle_model"].dropna().unique()),
+            "categoria": "Motocicleta",
+        }
+    )
+    dates = pd.date_range(ads["date"].min(), ads["date"].max(), freq="D")
+    calendar = pd.DataFrame(
+        {
             "data": dates,
             "ano": dates.year,
             "mes": dates.month,
-            "nome_mes": dates.strftime("%B"),
+            "nome_mes": dates.month_name(),
             "trimestre": dates.quarter,
-            "dia_semana": dates.strftime("%A")
-        })
-        dim_tempo.to_sql("dim_tempo", engine, if_exists="append", index=False)
-        print("✓ Tabela 'dim_tempo' populada.")
+            "dia_semana": dates.day_name(),
+        }
+    )
+    return platforms, vehicles, calendar
 
-        # 5. Mapeamento e Carga Fato Desempenho Mídia
-        df_platforms_db = pd.read_sql("SELECT * FROM dim_plataforma", engine)
-        df_models_db = pd.read_sql("SELECT * FROM dim_veiculo", engine)
-        
-        map_platform = dict(zip(df_platforms_db['nome_plataforma'], df_platforms_db['id_plataforma']))
-        map_model = dict(zip(df_models_db['modelo_veiculo'], df_models_db['id_veiculo']))
-        
-        df_ads['id_plataforma'] = df_ads['platform'].map(map_platform)
-        df_ads['id_veiculo'] = df_ads['vehicle_model'].map(map_model)
-        
-        fato_midia = df_ads[['date', 'id_plataforma', 'id_veiculo', 'impressions', 'clicks', 'cost_brl', 'leads']]
-        fato_midia.columns = ['data', 'id_plataforma', 'id_veiculo', 'impressoes', 'cliques', 'custo_brl', 'leads']
-        fato_midia.to_sql("fato_desempenho_midia", engine, if_exists="append", index=False)
-        print("✓ Tabela 'fato_desempenho_midia' populada.")
 
-        # 6. Mapeamento e Carga Fato Funil CRM
-        df_crm['id_plataforma'] = df_crm['platform'].map(map_platform)
-        df_crm['id_veiculo'] = df_crm['vehicle_model'].map(map_model)
-        
-        fato_crm = df_crm[['lead_id', 'date', 'id_plataforma', 'id_veiculo', 'test_drive', 'sale_completed', 'sale_value']]
-        fato_crm.columns = ['id_lead', 'data', 'id_plataforma', 'id_veiculo', 'test_drive', 'venda_concluida', 'valor_venda']
-        fato_crm.to_sql("fato_funil_crm", engine, if_exists="append", index=False)
-        print("✓ Tabela 'fato_funil_crm' populada com sucesso.")
-        
-    except Exception as e:
-        print(f"❌ Erro ao executar o pipeline de banco de dados: {e}")
+def run_full_refresh(engine: Engine, raw_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
+    """Load a complete snapshot atomically and safely support reruns."""
+    ads, crm = read_raw_data(raw_dir)
+    platforms, vehicles, calendar = build_dimensions(ads)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "TRUNCATE TABLE fato_funil_crm, fato_desempenho_midia, "
+                "dim_tempo, dim_veiculo, dim_plataforma RESTART IDENTITY CASCADE"
+            )
+        )
+
+        platforms.to_sql("dim_plataforma", connection, if_exists="append", index=False)
+        vehicles.to_sql("dim_veiculo", connection, if_exists="append", index=False)
+        calendar.to_sql("dim_tempo", connection, if_exists="append", index=False)
+
+        db_platforms = pd.read_sql(
+            "SELECT id_plataforma, nome_plataforma FROM dim_plataforma", connection
+        )
+        db_vehicles = pd.read_sql(
+            "SELECT id_veiculo, modelo_veiculo FROM dim_veiculo", connection
+        )
+        platform_ids = dict(
+            zip(db_platforms["nome_plataforma"], db_platforms["id_plataforma"])
+        )
+        vehicle_ids = dict(
+            zip(db_vehicles["modelo_veiculo"], db_vehicles["id_veiculo"])
+        )
+
+        ads_fact = ads.assign(
+            id_plataforma=ads["platform"].map(platform_ids),
+            id_veiculo=ads["vehicle_model"].map(vehicle_ids),
+        ).rename(
+            columns={
+                "date": "data",
+                "impressions": "impressoes",
+                "clicks": "cliques",
+                "cost_brl": "custo_brl",
+            }
+        )
+        ads_fact = ads_fact[
+            [
+                "data",
+                "id_plataforma",
+                "id_veiculo",
+                "impressoes",
+                "cliques",
+                "custo_brl",
+                "leads",
+            ]
+        ]
+
+        crm_fact = crm.assign(
+            id_plataforma=crm["platform"].map(platform_ids),
+            id_veiculo=crm["vehicle_model"].map(vehicle_ids),
+        ).rename(
+            columns={
+                "lead_id": "id_lead",
+                "date": "data",
+                "sale_completed": "venda_concluida",
+                "sale_value": "valor_venda",
+            }
+        )
+        crm_fact = crm_fact[
+            [
+                "id_lead",
+                "data",
+                "id_plataforma",
+                "id_veiculo",
+                "test_drive",
+                "venda_concluida",
+                "valor_venda",
+            ]
+        ]
+
+        if ads_fact[["id_plataforma", "id_veiculo"]].isna().any().any():
+            raise ValueError("Unmapped media dimension key detected.")
+        if crm_fact[["id_plataforma", "id_veiculo"]].isna().any().any():
+            raise ValueError("Unmapped CRM dimension key detected.")
+
+        ads_fact.to_sql(
+            "fato_desempenho_midia", connection, if_exists="append", index=False
+        )
+        crm_fact.to_sql("fato_funil_crm", connection, if_exists="append", index=False)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Load Torres Motos data into PostgreSQL.")
+    parser.add_argument("--raw-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    args = parser.parse_args()
+
+    engine = create_engine(get_database_url(), pool_pre_ping=True)
+    try:
+        run_full_refresh(engine, args.raw_dir)
+        print("Full refresh completed successfully.")
+    finally:
+        engine.dispose()
+
 
 if __name__ == "__main__":
-    run_database_pipeline()
+    main()
