@@ -1,22 +1,35 @@
+from __future__ import annotations
+
+import os
+
 import psycopg2
+from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# Conecta ao banco padrão 'postgres' para criar o novo banco
-try:
-    conn = psycopg2.connect(
+
+def create_database() -> None:
+    database_name = os.getenv("POSTGRES_DB", "torres_motos_db")
+    connection = psycopg2.connect(
         dbname="postgres",
-        user="postgres",
-        password="SUA_SENHA_AQUI", # Substitua pela sua senha
-        host="localhost",
-        port="5432"
+        user=os.getenv("POSTGRES_USER", "postgres"),
+        password=os.environ["POSTGRES_PASSWORD"],
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=os.getenv("POSTGRES_PORT", "5432"),
     )
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cursor = conn.cursor()
-    
-    cursor.execute("CREATE DATABASE torres_motors_db;")
-    print("✓ Banco 'torres_motors_db' criado com sucesso!")
-    
-    cursor.close()
-    conn.close()
-except Exception as e:
-    print(f"Erro ao criar banco (pode ser que já exista): {e}")
+    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM pg_database WHERE datname = %s", (database_name,)
+            )
+            if cursor.fetchone():
+                print(f"Database {database_name!r} already exists.")
+                return
+            cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database_name)))
+            print(f"Database {database_name!r} created successfully.")
+    finally:
+        connection.close()
+
+
+if __name__ == "__main__":
+    create_database()
