@@ -8,7 +8,8 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 def create_database() -> None:
-    database_name = os.getenv("POSTGRES_DB", "torres_motos_db")
+    # Preserve the database name already used by the Power BI file.
+    database_name = os.getenv("POSTGRES_DB", "torres_motors_db")
     connection = psycopg2.connect(
         dbname="postgres",
         user=os.getenv("POSTGRES_USER", "postgres"),
